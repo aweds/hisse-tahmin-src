@@ -29,7 +29,6 @@ if st.session_state.secili_sembol:
     with col2:
         tahmin_tarihi = st.date_input("Tahmin tarihi:", value=datetime.today(), max_value=datetime.today())
 
-    # Model seçimleri
     def temizle_ml():
         for key in ["ml_sonuc", "yon_tahmin"]:
             st.session_state.pop(key, None)
