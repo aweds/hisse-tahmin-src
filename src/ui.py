@@ -5,6 +5,7 @@ import numpy as np
 from datetime import datetime, timedelta
 import plotly.graph_objects as go
 
+# Modüllerden importlar
 from src.indikatorler import hesapla as ind_hesapla
 from src.tahmin import fiyat_aralik_tahmini
 from src.ml_models import tahmin_araligi, yon_tahmini
@@ -92,7 +93,7 @@ HISSE_LISTESI = [
 ]
 
 # ---------------------------
-# YENİ HALKA ARZ HİSSELERİ
+# YENİ HALKA ARZ HİSSELERİ (2024-2025 bilinenler)
 # ---------------------------
 HALKA_ARZ_LISTESI = [
     {"sembol": "AKFYE.IS", "isim": "Akfen Yenilenebilir Enerji"},
@@ -168,9 +169,56 @@ def veri_cek(sembol, baslangic, bitis):
     return yf.download(sembol, start=baslangic, end=bitis, progress=False)
 
 # ---------------------------
+# ÖZEL HİSSE LİSTESİ ARAYÜZÜ
+# ---------------------------
+def ozel_liste_arayuzu():
+    st.subheader("📝 Özel Hisse Listeniz")
+    st.write("Aşağıya hisse sembollerini girin (her satıra bir tane veya virgülle ayırın).")
+    kullanici_girdisi = st.text_area(
+        "Sembol listesi",
+        placeholder="THYAO.IS\nGARAN.IS\nASELS.IS\n...",
+        height=150,
+        key="ozel_liste_text"
+    )
+
+    if kullanici_girdisi:
+        semboller = []
+        for satir in kullanici_girdisi.splitlines():
+            satir = satir.strip()
+            if satir:
+                for s in satir.split(','):
+                    s = s.strip().upper()
+                    if s and s not in semboller:
+                        semboller.append(s)
+
+        if semboller:
+            st.success(f"✅ {len(semboller)} hisse eklendi.")
+            st.session_state["ozel_liste"] = semboller
+
+            st.write("**Özel listenizdeki hisseler:**")
+            for i in range(0, len(semboller), 3):
+                cols = st.columns(3)
+                for j in range(3):
+                    idx = i + j
+                    if idx < len(semboller):
+                        sembol = semboller[idx]
+                        with cols[j]:
+                            st.button(
+                                f"{sembol}",
+                                key=f"ozel_{sembol}",
+                                on_click=lambda s=sembol: st.session_state.update({"secili_sembol": s}),
+                                use_container_width=True
+                            )
+        else:
+            st.info("Henüz bir sembol girilmedi.")
+    else:
+        st.info("Yukarıya hisse sembollerini yazın.")
+
+# ---------------------------
 # HİSSE SEÇİM ARAYÜZÜ
 # ---------------------------
 def hisse_secim_arayuzu():
+    # Halka arz listesi bölümü
     st.subheader("🆕 Yeni Halka Arz Hisseleri")
     with st.expander("Halka arz listesini göster (son 1-2 yıl)"):
         st.write("Listeden seçmek için butona tıklayın:")
@@ -188,6 +236,7 @@ def hisse_secim_arayuzu():
                             use_container_width=True
                         )
 
+    # Arama kutusu
     arama_metni = st.text_input("Hisse adı veya kodu yazın:", placeholder="Örn: THYAO veya Türk Hava")
     if arama_metni:
         arama_lower = arama_metni.lower()
@@ -216,6 +265,10 @@ def hisse_secim_arayuzu():
                         )
     else:
         st.info("Hisse aramaya başlayın veya halka arz listesinden seçin.")
+
+    # Özel liste bölümünü göster
+    st.markdown("---")
+    ozel_liste_arayuzu()
 
 # ---------------------------
 # TÜM HESAPLAMALARI YAPAN FONKSİYON
